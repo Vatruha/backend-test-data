@@ -1,0 +1,67 @@
+
+        
+categories_all:
+    pattern:  /categories
+    defaults: { _controller: AppBundle:CategoryRest:all, _format: json }
+    requirements:
+        _method: GET
+category_get:
+    pattern:  /categories/{id}
+    defaults: { _controller: AppBundle:CategoryRest:get, _format: json }
+    requirements:
+        _method: GET
+        id: "\d+"
+category_products_list:
+    pattern:  /categories/{id}/products
+    defaults: { _controller: AppBundle:CategoryRest:getProducts, _format: json }
+    requirements:
+        _method: GET
+        id: "\d+"
+        
+        
+basket_items_list:
+    pattern:  /basket
+    defaults: { _controller: AppBundle:BasketRest:allItemsInBasket, _format: json }
+    requirements:
+        _method: GET
+
+basket_products_delete:
+    pattern:  /basket/product/{id}
+    defaults: { _controller: AppBundle:BasketRest:deleteProduct, _format: json }
+    requirements:
+        _method: DELETE
+        id: "\d+"
+
+basket_product_set_quantity:
+    pattern:  /basket/product/{id}
+    defaults: { _controller: AppBundle:BasketRest:setProductQuantity, _format: json }
+    requirements:
+        _method: PUT
+        id: "\d+"
+
+basket_add_product:
+    pattern:  /basket
+    defaults: { _controller: AppBundle:BasketRest:addProduct, _format: json }
+    requirements:
+        _method: POST
+
+product_images_list:
+    pattern:  /products/{id}/images
+    defaults: { _controller: AppBundle:ProductRest:getImages, _format: json }
+    requirements:
+        _method: GET
+        id: "\d+"
+        
+
+ordrer_make_order:
+    pattern:  /orders/make
+    defaults: { _controller: AppBundle:OrderRest:makeOrder, _format: json }
+    requirements:
+        _method: POST
+        
+ordrers_list:
+    pattern:  /orders
+    defaults: { _controller: AppBundle:OrderRest:all, _format: json }
+    requirements:
+        _method: GET
+     

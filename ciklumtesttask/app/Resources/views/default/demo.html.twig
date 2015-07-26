@@ -1,0 +1,460 @@
+{% extends 'base.html.twig' %}
+{% block title %}Demo api page{% endblock %}
+{% block stylesheets %}
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+
+ <style>
+ @media (min-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0px;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    display: block;
+    padding: 20px;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    background-color: #f5f5f5;
+    border-right: 1px solid #eee;
+  }
+}    
+ /* Sidebar navigation */
+.nav-sidebar {
+  margin-right: -21px; /* 20px padding + 1px border */
+  margin-bottom: 20px;
+  margin-left: -20px;
+}
+.nav-sidebar > li > a {
+  padding-right: 20px;
+  padding-left: 20px;
+}
+.nav-sidebar > .active > a,
+.nav-sidebar > .active > a:hover,
+.nav-sidebar > .active > a:focus {
+  color: #fff;
+  background-color: #428bca;
+}
+.prod .imgs{
+    margin: 10px 0;
+}
+.prod input.quantity{
+    width: 50px;
+}
+table.basket tr a{
+    color: red;
+    cursor: pointer;
+}
+table.basket tr input{
+    width: 50px;
+}
+ </style>
+ 
+ {#<style>
+        ul li{
+            cursor: pointer;
+        }
+        ul li:hover{
+            background-color: threedface;
+        }
+        input{
+            width: 20px;
+        }
+        .basket, .orders{
+            border: 1px solid #08C;
+            padding: 10px;
+           
+            margin: 10px;
+            min-width: 200px;
+            
+        }
+        .orders .items div{
+            border-bottom: 1px solid #5eb5e0;
+            margin: 5px;
+        }
+        .basket .items{
+            font-family: monospace;
+            padding-left: 20px;
+        }
+        .basket .items a, .basket .items a:visited{
+            color: red;
+            cursor: pointer;
+        }
+        .clear{
+            clear:both;
+        }
+        pre{
+            max-width: 200px;
+        }
+</style>#}
+    
+{% endblock %}
+{% block body %}
+    
+   
+    
+    <script>
+        
+        var App = function(conf){
+            function isdef(obj){
+                return typeof obj !=="undefined";
+            }
+            var self = this;
+            var access_token = null;
+            
+            var eventsType ={
+                onAccessTokenReceived:'onAccessTokenReceived'
+            };
+            
+            var basketContainer = $('#js-basket-items-container');
+            var ordresItemCnt = $('#js-order-items-container');
+            $('#js-make-order-btn').click(makeOrder);
+            
+            $( document ).ajaxError( function(error1, err2){
+                {#console.log(arguments);#}
+                if(isdef(err2.responseJSON)){
+                    var m = "unknown error";
+                    if(isdef(err2.responseJSON.error_description)){
+                        m = err2.responseJSON.error_description;
+                    }
+                    else if(isdef(err2.responseJSON.error) && isdef(err2.responseJSON.error.exception)){
+                        m = err2.responseJSON.error.exception.map(function(item){
+                            return item.message;
+                        }).reduce(function(p, i){
+                            return p+ ",\n" + i;
+                        });
+                    }
+                    alert(m);
+                }
+                
+            });
+            function ajaxSetupToken(){
+                $.ajaxSetup({
+                    headers: {
+                      "accept": "application/json",
+                      "Authorization": "Bearer " + access_token
+                    }                    
+                 });
+            }
+            function regenearateAccessToken(username, password){
+                $.getJSON(
+                    conf.oauthGrantPath?conf.oauthGrantPath:'/oauth/v2/token',
+                    {
+                        client_id: conf.oauthClientID,
+                        client_secret: conf.oauthClientSecret,
+                        grant_type: 'password',
+                        username:username,
+                        password: password
+                    },
+                    function(resp){
+                        access_token = resp.access_token;
+                        $(self).trigger(eventsType.onAccessTokenReceived);
+                    }
+                );
+            }
+            
+            function runApp(){
+                loadCategoriesList();
+                reloadProductsInBasket();
+                loadOrders();
+            }
+            
+            function loadCategoriesList(){
+                $.getJSON('/api/categories', function(categoriesList){
+                    categoriesList.map(function(item){
+                       var jsonText = JSON.stringify(item,null, '\t');
+                       var cat_id = item.id;
+                       $('#js-categoriels-list').append(
+                           $(nano("<li><a href=\"javascript:\">{name}</a></li>", {
+                               name:item.name
+                               
+                           })).click(function(){                               
+                               loadProductsListWithCategory(cat_id);
+                           })
+                       );
+                    });
+                });
+            }
+            function loadProductsListWithCategory(catId){
+                $.getJSON('/api/categories/'+catId+'/products', {
+                    limit:10,
+                    offset:0,
+                    sortBy: 'title'
+                }, function(productsList){                    
+                    $('#js-products-list').empty();
+                    productsList.map(function(item){
+                        $('#js-products-list').append(
+                           (function(){
+                               var prodTpl = $('#js-produc-tpl').html();
+                              
+                                var productBloc = $(
+                                        nano(prodTpl,{
+                                            title:item.title,
+                                            desc:item.description,
+                                            quantity:item.quantity,
+                                            price: item.price,                                            
+                                            currency:item.currency.name
+                                    }));
+                                productBloc.find(".js-img-load").click(function(e){
+                                   loadProductImagesWithProductID(item.id, productBloc.find('.js-imgs-list'));
+                                   e.stopPropagation();
+                                });
+                                productBloc.find('.js-addToCart').click(function(){
+                                    addProductIntoCart(item.id, parseInt(productBloc.find('input.js-quantity').val()));
+                                });
+                                return productBloc;
+                           })()
+                        );
+                    });                      
+                });
+            }
+            function loadProductImagesWithProductID(productID, imgsContainer){
+                $.getJSON("/api/products/"+productID+"/images",function(imagesList){
+                    imgsContainer.empty();
+                    imagesList.map(function(item){
+                        imgsContainer.append(nano(
+                            '<img width="100" alt="{title}" title="{title}" src="{src}"/>',
+                            {
+                                src: item.image_url,
+                                title: item.title
+                            }
+                        ));
+                    });
+                });
+            }
+            
+            function addProductIntoCart(productID, quantity){
+                $.ajax({
+                    type: "POST",
+                    url: '/api/basket',
+                    data: {product:productID,quantity:quantity},
+                    statusCode: {
+                        201: function() {
+                          reloadProductsInBasket();
+                        }
+                      },
+                    success: function(){
+                        
+                        reloadProductsInBasket();
+                    }
+                });
+            }
+            
+            function setBasketProductQuantity(productId, quantity){
+                $.ajax({
+                    url: '/api/basket/product/'+productId,
+                    type: 'PUT',
+                    data:{
+                        quantity:quantity
+                    },
+                    statusCode: {
+                        201: function() {
+                          reloadProductsInBasket();
+                        }
+                    }
+                });
+            }
+            function deleteProductFromBasket(productId){
+                 $.ajax({
+                    type: "DELETE",
+                    url: '/api/basket/product/'+productId,
+                    statusCode: {
+                        201: function() {
+                          reloadProductsInBasket();
+                        }
+                    }
+                });
+            }
+            
+            function reloadProductsInBasket(){
+                $.getJSON('/api/basket', function(basketItemsList){
+                    renderBasketItemsList(basketItemsList);
+                });
+            }
+            function renderBasketItemsList(basketItemsList){
+                basketContainer.empty();
+                    var basket_item_tpl = '<tr>'+$('#js-basket-item-tpl tr').html()+'</tr>';                    
+                    basketItemsList.map(function(item){
+                        var html = $(nano(basket_item_tpl, {
+                                        name: item.product.title,
+                                        quantity:item.quantity,
+                                        price: item.product.price,
+                                        currency:item.product.currency.name,
+                                        totalPrice: parseFloat(Math.round(item.product.price * item.quantity*100)/100).toFixed(2),
+                                      }));
+                        html.find('button').click(function(){
+                           setBasketProductQuantity(item.product.id, parseInt(html.find('input').val()))
+                       }); 
+                       html.find('a').click(function(){deleteProductFromBasket(item.product.id);});
+                        basketContainer.append(html);
+                    });
+            }
+            function makeOrder(){
+                $.post("/api/orders/make", function(){                   
+                   loadOrders();
+                   reloadProductsInBasket();
+                });
+            }
+            
+            function loadOrders(){
+                $.getJSON('/api/orders', function(ordersList){
+                    ordresItemCnt.empty();
+                    var orderTpl = $('#js-order-tpl').html();
+                    
+                    ordersList.map(function(item){
+                        var order = $(nano(orderTpl, {id:item.id}));
+                        var order_item_tpl = '<tr>'+$('#js-order-item-tpl tr').html()+'</tr>';                    
+                        item.items.map(function(item){
+                            var html = $(nano(order_item_tpl, {
+                                        name: item.product.title,
+                                        quantity:item.quantity,
+                                        price: item.product.price,
+                                        currency:item.product.currency.name,
+                                        totalPrice: parseFloat(Math.round(item.product.price * item.quantity*100)/100).toFixed(2),
+                                      }));
+                            
+                            order.find('table').append(html);
+                        });
+                        ordresItemCnt.append(order);
+                    });
+                });
+            }
+            $(this).on(eventsType.onAccessTokenReceived, ajaxSetupToken);            
+            $(this).on(eventsType.onAccessTokenReceived, runApp);
+            
+            
+            
+            regenearateAccessToken(conf.username, conf.password); 
+        }
+        
+        var conf = {
+            username: 'mylogin',
+            password: 'mypassword',
+            oauthClientID:'1_eu9zbrm4su80s84ogw0gcgkg88wk4wows40ow4sokk84csgsk',
+            oauthClientSecret: '6cizmxy8thwc00co8ocg4004w4kww0go0sg8owgo4owc84880o'
+        }
+        $(function(){
+            var app = new App(conf);
+        });
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        function nano(template, data) {
+            return template.replace(/\{([\w\.]*)\}/g, function(str, key) {
+              var keys = key.split("."), v = data[keys.shift()];
+              for (i = 0, l = keys.length; i < l; i++) v = v[this];
+              return (typeof v !== "undefined" && v !== null) ? v : "";
+            });
+        };
+    </script>
+    
+    <div class="container-fluid">
+     <div class="row">
+       <div class="col-sm-3 col-md-2 sidebar">
+           <h1 class="page-header">Categories</h1>
+         <ul id="js-categoriels-list" class="nav nav-sidebar">
+           
+         </ul>
+        
+         
+       </div>
+     <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+          <h1 class="page-header">Products</h1>
+
+          <div id="js-products-list" class="row placeholders">
+            
+          </div>
+          <hr>
+          <h2 class="sub-header">Basket</h2>
+          <div class="table-responsive">
+            <table class="basket table table-striped">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                  <th>Actions</th>
+                  
+                </tr>
+              </thead>
+              <tbody id="js-basket-items-container">
+               
+              </tbody>
+            </table>
+              <button id="js-make-order-btn">Make order</button>
+          </div>
+          <hr>
+           <h2 class="sub-header">Orders</h2>
+           <div id="js-order-items-container">
+           <div class="table-responsive">
+               
+           </div>
+           </div>
+        </div>
+      </div>
+    </div>
+         
+        
+   
+
+    
+    <div id="js-produc-tpl" style="display: none">
+        
+        <div class="prod col-xs-6 col-sm-3 placeholder">              
+              <h4>{title}</h4>
+              <span class="text-muted">{desc}</span>
+              <p>
+              <span class="text-muted">In stock: {quantity}</span><br/>
+              Price: {price} {currency}
+              </p>
+              <div class="imgs js-imgs-list">
+                  <button class="js-img-load">Load images</button>
+              </div>
+              <input class="quantity js-quantity" value="1" type="text"/> <button class="js-addToCart">Buy</button>
+            </div>
+        
+    </div>   
+    <table id="js-basket-item-tpl" style="display: none">
+        
+        <tr>
+            <td>{name}</td>
+            <td>{price} {currency}</td>
+            <td><input type="text" value="{quantity}"/> <button>Set quantity</button></td>
+            <td>{totalPrice} {currency}</td>
+            <td>[<a>remove</a>]</td>           
+        </tr>
+    </table>
+    
+    <div id="js-order-tpl" style="display: none">
+        <h4>Order #{id}</h4>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                
+            </table>
+        </div>
+    </div>
+    <table id="js-order-item-tpl" style="display: none">
+        
+        <tr>
+            <td>{name}</td>
+            <td>{price} {currency}</td>
+            <td>{quantity}</td>
+            <td>{totalPrice} {currency}</td>                    
+        </tr>
+    </table>
+{% endblock %}

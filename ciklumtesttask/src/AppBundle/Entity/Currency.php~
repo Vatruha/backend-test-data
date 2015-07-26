@@ -1,0 +1,35 @@
+<?php
+
+
+namespace AppBundle\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * Product
+ *
+ * @ORM\Table()
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\CurrencyRepository")
+ */
+class Currency{
+    /**
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+    
+    /**
+    * @var string  
+    * @ORM\Column(length=100)
+    */
+    private $name;
+    
+    /**   
+    * @var float      
+    * @ORM\Column(type="decimal", scale=2, precision=9)
+    */
+    private $exchangeRate;
+}
