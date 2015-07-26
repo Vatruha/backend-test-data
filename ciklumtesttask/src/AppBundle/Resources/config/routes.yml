@@ -1,0 +1,12 @@
+homepage:
+    pattern: /
+    defaults: {_controller: AppBundle:Default:index }
+    requirements:
+        _method: GET
+
+
+demopage:
+    pattern: /demo
+    defaults: {_controller: AppBundle:Default:demo }
+    requirements:
+        _method: GET

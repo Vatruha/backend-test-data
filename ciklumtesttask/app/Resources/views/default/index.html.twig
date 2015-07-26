@@ -1,0 +1,89 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <style>
+        body{
+            font-family: monospace;
+            padding: 20px;
+        }
+        pre{
+            padding-left: 20px;
+            color: #0f6ab4;
+            overflow: auto;
+        }
+    </style>
+{% endblock %}
+{% block body %}
+    
+    <a href="{{ path('nelmio_api_doc_index')}}">Api documentation</a><br/>
+    
+    <a href="{{ path('demopage')}}">Api client demo page</a>
+    
+    <h3>Demo rest api task</h3>
+    <p>
+    Each request need sign by autenteficated token, as auth service here used OAuth2.0
+    </p>
+    
+    <p>
+        For add OAuth client use next command:
+    <pre>
+php app/console acme:oauth-server:client:create --redirect-uri="http://clinet.local/" --grant-type="authorization_code" --grant-type="password" --grant-type="refresh_token" --grant-type="token" --grant-type="client_credentials"
+    </pre>
+    This will register an OAuth client on the platform side, and will Output something like this (of course, you will see slightly different output)
+    <pre>
+Added a new client with public id 5_ebg354gknv48kc88o8oogwokckco0o40sc000cowc8soosw0k, secret 5ub5upfxih0k8g44w00ogwc4swog4088o8444sssos8k888o8g
+
+    </pre>
+</p>
+
+For access token with user login and password you can make next request like:
+<pre>
+/oauth/v2/token?client_id=1_eu9zbrm4su80s84ogw0gcgkg88wk4wows40ow4sokk84csgsk&grant_type=password&client_secret=6cizmxy8thwc00co8ocg4004w4kww0go0sg8owgo4owc84880o&username=mylogin&password=mypassword
+</pre>
+In example I use login: "mylogin" and password "mypassword",<br>
+if all done right you will get response like this:
+<pre>
+{
+    "access_token":"OWM3YjliMjgwYjY4ZmEzMDkwODI1MTBiMDcyYWYyYjZhYTUxMTdiMjE3N",
+    "expires_in":3600,
+    "token_type":"bearer",
+    "scope":"user",
+    "refresh_token":"NzJjMzFhN2I3YzJjOTQ5Njk1MzkyYjVhN2NmOTdmY2FlNWY"
+}
+</pre>
+OAuth token url is: "/oauth/v2/token"<br/>
+Each api reqest need sign by received access_token, for do that you can:<br/>
+<ul>
+    <li>
+        Sign each request with parameter "access_token" like api/request?access_token=eu9zbrm4su80s
+    </li>
+     <li>
+        Sign each request with header "Authorization" with "Bearer " prefix before access token, example with jQuery:
+        <pre>
+            $.ajaxSetup({
+                headers: {
+                    "Authorization": "Bearer " + access_token
+                }                    
+            });
+        </pre>
+    </li>
+</ul>
+
+
+    Api documentation you can looks here: <a href="{{ path('nelmio_api_doc_index')}}">api documentation</a><br/>
+    
+    <a href="{{ path('demopage')}}">Look api client demo page</a>
+    
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <br/>
+    <hr/>
+    Developed by:   Sviatoslav Mysachenko<br/>
+    E-mail:         <a href="mailto:svyatoslavik@gmail.com">svyatoslavik@gmail.com</a><br/>
+    Skype:          Svyatoslavik
+{% endblock %}

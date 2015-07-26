@@ -1,0 +1,43 @@
+<?php
+
+namespace AppBundle\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * OrderItem
+ *
+ * @ORM\Table()
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\OrderItemRepository")
+ */
+class OrderItem {
+     /**
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+    
+    /**
+     * @ORM\ManyToOne(targetEntity="Product")
+     * @var Product
+     */
+    private $product;
+
+
+    /**
+     *
+     * @var integer
+     * @ORM\Column(type="integer")
+     */
+    private $quantity;
+
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Order")
+     * @var Order
+     */
+    private $order;
+}

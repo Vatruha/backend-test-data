@@ -1,0 +1,37 @@
+<?php
+
+namespace AppBundle\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+
+/**
+ * Basket
+ *
+ * @ORM\Table()
+ * @ORM\Entity(repositoryClass="AppBundle\Repository\BasketRepository")
+ */
+class Basket{
+    /**
+     * @var integer
+     *
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+    
+    /**
+    * @var User
+    * @ORM\OneToOne(targetEntity="AppBundle\Entity\User", inversedBy="basket")
+    **/
+    protected $user;
+
+
+
+    /**
+    * @var \Doctrine\Common\Collections\ArrayCollection<AppBundle\Entity\BasketItem>
+    * @ORM\OneToMany(targetEntity="BasketItem", mappedBy="basket")
+    */
+    protected $items;
+}
